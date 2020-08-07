@@ -1,49 +1,16 @@
-﻿namespace CoolCompiler
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CoolCompiler
 {
-    public enum TokenType
+    public class Token
     {
-      Class,
-      Else,
-      Fi,
-      If,
-      In,
-      Inherits,
-      Let,
-      Loop,
-      Pool,
-      Then,
-      While,
-      Case,
-      Esac,
-      Of,
-      Darrow,
-      New,
-      Isvoid,
-      StrConst,
-      IntConst,
-      BoolConst,
-      Typeid,
-      Objectid,
-      Assign,
-      Not,
-      Le,
-      Error,
-      LetStmt,
-      Plus,
-      Minus,
-      Slash,
-      Asterisk,
-      OpenParenthesis,
-      CloseParenthesis,
-      Equal,
-      LessThan,
-      Dot,
-      Tilde,
-      Comma,
-      SemiColon,
-      Colon,
-      At,
-      OpenBrace,
-      CloseBrace
+        public TokenType TokenType { get; }
+        public string Value { get; }
+
+        public Token(TokenType tokenType, string value)
+        {
+            TokenType = tokenType;
+            Value = value;
+        }
     }
 }
