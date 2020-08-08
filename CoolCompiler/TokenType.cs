@@ -46,4 +46,11 @@
       OpenBrace,
       CloseBrace
     }
+    
+    public enum RuleStatus
+    {
+        Initial,
+        String,
+        Comment
+    }
 }

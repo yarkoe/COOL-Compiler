@@ -1,17 +1,24 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 
 namespace CoolCompiler
 {
-    public class TokenDefinition
+    public class TokenMatchRule
     {
-        private readonly Regex _regex;
-        private readonly Func<Token> _rule;
+        public ImmutableHashSet<RuleStatus> StatusSet;
+        public Func<string, IToken> Value;
+    }
 
-        public TokenDefinition(Regex regex, Func<Token> rule)
+    public class TokenMatchDefinition
+    {
+        private Regex _regex;
+        public TokenMatchRule Rule;
+
+        public TokenMatchDefinition(string regexString, TokenMatchRule rule)
         {
-            _regex = regex;
-            _rule = rule;
+            _regex = new Regex(regexString);
+            Rule = rule;
         }
 
         public TokenMatchInfo Match(string inputText)
@@ -35,8 +42,8 @@ namespace CoolCompiler
             return new TokenMatchInfo()
             {
                 IsMatch = true,
-                RemainingText = remainingText,
-                Token = _rule()
+                CurrentText = match.Value,
+                RemainingText = remainingText
             };
         }
     }
