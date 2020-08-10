@@ -6,7 +6,7 @@ namespace CoolCompiler
 {
     public class TokenMatchRule
     {
-        public ImmutableHashSet<RuleStatus> StatusSet;
+        public ImmutableList<RuleState> States;
         public Func<string, IToken> Value;
     }
 

@@ -47,10 +47,11 @@
       CloseBrace
     }
     
-    public enum RuleStatus
+    public enum RuleState
     {
         Initial,
         String,
+        BrokenString,
         Comment
     }
 }
