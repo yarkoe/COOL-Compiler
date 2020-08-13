@@ -549,5 +549,31 @@ namespace CoolCompiler
             
             return new Token(TokenType.Error, "String constant too long");
         }
+
+        public List<Token> Tokenize(string inputText)
+        {
+            var tokens = new List<Token>();
+            
+            var remainingText = inputText;
+            while (!string.IsNullOrEmpty(remainingText))
+            {
+                foreach (var tokenMatchDefinition in _tokenMatchDefinitions)
+                {
+                    if (!tokenMatchDefinition.Rule.States.Contains(_ruleState)) continue;
+
+                    var matchInfo = tokenMatchDefinition.Match(remainingText);
+                    if (!matchInfo.IsMatch) continue;
+
+                    remainingText = matchInfo.RemainingText;
+                    var token = tokenMatchDefinition.Rule.Value(matchInfo.CurrentText);
+
+                    if (token is NullToken) break;
+
+                    tokens.Add(token as Token);
+                }
+            }
+
+            return tokens;
+        }
     }
 }
