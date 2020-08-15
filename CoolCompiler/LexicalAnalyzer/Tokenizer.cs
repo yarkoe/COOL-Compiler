@@ -1,4 +1,5 @@
-﻿﻿using System.Collections.Generic;
+﻿﻿using System;
+ using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace CoolCompiler
@@ -23,6 +24,26 @@ namespace CoolCompiler
 
         public Tokenizer()
         {
+            /* White spaces */
+            
+            _tokenMatchDefinitions.Add(new TokenMatchDefinition(@"^[ \f\r\t\v]+", 
+                new TokenMatchRule()
+                {
+                    States = ImmutableList.Create<RuleState>(RuleState.Initial),
+                    Value = _ => new NullToken()
+                }));
+            _tokenMatchDefinitions.Add(new TokenMatchDefinition(@"^\n",
+                new TokenMatchRule()
+                {
+                    States = ImmutableList.Create<RuleState>(RuleState.Initial, RuleState.Comment),
+                    Value = _ =>
+                    {
+                        _lineNumber += 1;
+
+                        return new NullToken();
+                    }
+                }));
+            
             /* Key words */
             _tokenMatchDefinitions.Add(new TokenMatchDefinition("^(?i:class)", 
                 new TokenMatchRule()
@@ -48,17 +69,17 @@ namespace CoolCompiler
                     States = ImmutableList.Create<RuleState>(RuleState.Initial),
                     Value = _ => new Token(TokenType.Fi)
                 }));
+            _tokenMatchDefinitions.Add(new TokenMatchDefinition("^(?i:inherits)", 
+                new TokenMatchRule()
+                {
+                    States = ImmutableList.Create<RuleState>(RuleState.Initial),
+                    Value = _ => new Token(TokenType.Inherits)
+                }));
             _tokenMatchDefinitions.Add(new TokenMatchDefinition("^(?i:in)", 
                 new TokenMatchRule()
                 {
                     States = ImmutableList.Create<RuleState>(RuleState.Initial),
                     Value = _ => new Token(TokenType.In)
-                }));
-            _tokenMatchDefinitions.Add(new TokenMatchDefinition("^(?i:Inherits)", 
-                new TokenMatchRule()
-                {
-                    States = ImmutableList.Create<RuleState>(RuleState.Initial),
-                    Value = _ => new Token(TokenType.Inherits)
                 }));
             _tokenMatchDefinitions.Add(new TokenMatchDefinition("^(?i:let)", 
                 new TokenMatchRule()
@@ -226,13 +247,13 @@ namespace CoolCompiler
                     States = ImmutableList.Create<RuleState>(RuleState.Initial),
                     Value = _ => new Token(TokenType.CloseBrace)
                 }));
-            _tokenMatchDefinitions.Add(new TokenMatchDefinition("^(", 
+            _tokenMatchDefinitions.Add(new TokenMatchDefinition(@"^\(", 
                 new TokenMatchRule()
                 {
                     States = ImmutableList.Create<RuleState>(RuleState.Initial),
                     Value = _ => new Token(TokenType.OpenParenthesis)
                 }));
-            _tokenMatchDefinitions.Add(new TokenMatchDefinition("^)", 
+            _tokenMatchDefinitions.Add(new TokenMatchDefinition(@"^\)", 
                 new TokenMatchRule()
                 {
                     States = ImmutableList.Create<RuleState>(RuleState.Initial),
@@ -282,7 +303,7 @@ namespace CoolCompiler
                     {
                         var idIndex = IdTable.addString(matchString);
 
-                        return new Token(TokenType.Typeid, idIndex);
+                        return new Token(TokenType.TypeId, idIndex);
                     }
                 })); 
             
@@ -295,7 +316,7 @@ namespace CoolCompiler
                     {
                         var idIndex = IdTable.addString(matchString);
 
-                        return new Token(TokenType.Objectid, idIndex);
+                        return new Token(TokenType.ObjectId, idIndex);
                     }
                 }));
 
@@ -384,8 +405,6 @@ namespace CoolCompiler
                         {
                             return ProvokeStringLengthErrorToken();
                         }
-
-                        _stringBuffer += matchString;
 
                         return new NullToken();
                     }
@@ -511,20 +530,8 @@ namespace CoolCompiler
                         return new Token(TokenType.Error, "EOF in string constant;");
                     }
                 }));
-
-
-
-            _tokenMatchDefinitions.Add(new TokenMatchDefinition(@"^\n",
-                new TokenMatchRule()
-                {
-                    States = ImmutableList.Create<RuleState>(RuleState.Initial, RuleState.Comment),
-                    Value = _ =>
-                    {
-                        _lineNumber += 1;
-
-                        return new NullToken();
-                    }
-                }));
+            
+            
             _tokenMatchDefinitions.Add(new TokenMatchDefinition("^.",
                 new TokenMatchRule()
                 {
@@ -557,23 +564,40 @@ namespace CoolCompiler
             var remainingText = inputText;
             while (!string.IsNullOrEmpty(remainingText))
             {
-                foreach (var tokenMatchDefinition in _tokenMatchDefinitions)
-                {
-                    if (!tokenMatchDefinition.Rule.States.Contains(_ruleState)) continue;
+                var maxMatchTextWithRule = GetMaxMatchTextWithRule(remainingText);
+                
+                if (maxMatchTextWithRule.Item1.Length == 0) continue;
+                
+                remainingText = remainingText.Substring(maxMatchTextWithRule.Item1.Length);
+                var token = maxMatchTextWithRule.Item2(maxMatchTextWithRule.Item1);
 
-                    var matchInfo = tokenMatchDefinition.Match(remainingText);
-                    if (!matchInfo.IsMatch) continue;
+                if (token is NullToken) continue;
 
-                    remainingText = matchInfo.RemainingText;
-                    var token = tokenMatchDefinition.Rule.Value(matchInfo.CurrentText);
-
-                    if (token is NullToken) break;
-
-                    tokens.Add(token as Token);
-                }
+                tokens.Add(token as Token);
             }
 
             return tokens;
+        }
+
+        private Tuple<string, Func<string, IToken>> GetMaxMatchTextWithRule(string text)
+        {
+            var maxMatchTextWithRule = new Tuple<string, Func<string, IToken>>(string.Empty, null);
+
+            foreach (var tokenMatchDefinition in _tokenMatchDefinitions)
+            {
+                if (!tokenMatchDefinition.Rule.States.Contains(_ruleState)) continue;
+
+                var matchInfo = tokenMatchDefinition.Match(text);
+                if (!matchInfo.IsMatch) continue;
+
+                if (matchInfo.MatchText.Length > maxMatchTextWithRule.Item1.Length)
+                {
+                    maxMatchTextWithRule = new Tuple<string, Func<string, IToken>>(matchInfo.MatchText, 
+                        tokenMatchDefinition.Rule.Value);
+                }
+            }
+            
+            return maxMatchTextWithRule;
         }
     }
 }

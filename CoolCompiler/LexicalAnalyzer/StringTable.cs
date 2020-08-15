@@ -18,5 +18,8 @@ namespace CoolCompiler
             _table.Add(inputString);
             return _table.Count;
         }
+
+        public string GetString(int index) => _table.Count < index ? string.Empty : _table[index - 1];
+
     }
 }

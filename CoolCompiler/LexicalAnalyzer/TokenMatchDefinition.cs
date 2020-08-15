@@ -33,17 +33,10 @@ namespace CoolCompiler
                 };
             }
 
-            var remainingText = string.Empty;
-            if (match.Length != inputText.Length)
-            {
-                remainingText = inputText.Substring(match.Length);
-            }
-
             return new TokenMatchInfo()
             {
                 IsMatch = true,
-                CurrentText = match.Value,
-                RemainingText = remainingText
+                MatchText = match.Value,
             };
         }
     }
